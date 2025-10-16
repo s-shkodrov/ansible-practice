@@ -1,0 +1,121 @@
+
+##{{ ansible_managed }}
+
+server {
+    listen 80;
+{% for prefix in skynet_balancer_deploy_services | subelements('prefixes') %} 
+    #config for {{ prefix.0.name }}_{{ prefix.0.tag }}:{{ prefix.0.port }}
+{% if prefix.1.broadcast | default(skynet_balancer_deploy_services_prefixes_default.broadcast) %}
+    location {% if prefix.1.regex | default(skynet_balancer_deploy_services_prefixes_default.regex) %}~ /{% else %}/{% endif %}{{ prefix.1.prefix }} {
+        access_log {{ skynet_balancer_deploy_nginx_logs_base_path }}/{{ prefix.0.name }}_{{ prefix.0.tag }}/nginx_access.log service_json_log_format;
+        error_log {{ skynet_balancer_deploy_nginx_logs_base_path }}/{{ prefix.0.name }}_{{ prefix.0.tag }}/nginx_error.log;
+{% for worker in skynet_balancer_deploy_workers %} 
+        mirror /{{ worker.ip }}/{{ prefix.1.prefix }};{% endfor %}
+       
+ 
+        proxy_pass http://{{ prefix.0.name }}_{{ prefix.0.tag }}_{{ prefix.0.port }}_{% if prefix.1.sticky_session | default(skynet_balancer_deploy_services_prefixes_default.sticky_session) %}sticky{% else %}nonsticky{% endif %}{% if prefix.1.from_admin | default(skynet_balancer_deploy_services_prefixes_default.from_admin) %}_from_admin{% endif %};
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        
+        # Fixed TCP related timeouts
+        proxy_connect_timeout 2;
+        proxy_send_timeout 2;
+
+        #keepalive stuff
+        keepalive_requests 2048;
+        proxy_http_version 1.1;
+        proxy_set_header Connection '';
+
+        # Service-dependent max body size
+        client_max_body_size {{ prefix.1.max_body_size | default(skynet_balancer_deploy_services_prefixes_default.max_body_size) }};
+
+        # Service-dependent response timeout
+        proxy_read_timeout {{ prefix.1.timeout | default(skynet_balancer_deploy_services_prefixes_default.timeout) }};
+
+{% if prefix.1.allow_duplicate_non_idempotent_requests | default(skynet_balancer_deploy_services_prefixes_default.allow_duplicate_non_idempotent_requests) %}
+        # Specifies in which cases a request should be passed to the next server
+        proxy_next_upstream error timeout{% for code in prefix.1.upstream_failure_http_codes | default(skynet_balancer_deploy_services_prefixes_default.upstream_failure_http_codes) %} http_{{ code }}{% endfor %} non_idempotent;
+{% endif %}
+    }
+
+{% for worker in skynet_balancer_deploy_workers %}         
+    location /{{ worker.ip }}/{{ prefix.1.prefix }} {
+        proxy_pass http://{{ worker.ip }}:{{ prefix.0.port }}$request_uri;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        # Fixed TCP related timeouts
+        proxy_connect_timeout 2;
+        proxy_send_timeout 2;
+
+{% if prefix.1.ws | default(False) %}
+        #websocket stuff
+        proxy_http_version 1.1;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Upgrade $http_upgrade;
+{% else %}
+        #keepalive stuff
+        keepalive_requests 2048;
+        proxy_http_version 1.1;
+        proxy_set_header Connection '';
+{% endif %}
+
+        # Service-dependent response timeout
+        proxy_read_timeout {{ prefix.1.timeout | default(skynet_balancer_deploy_services_prefixes_default.timeout) }};
+    } 
+{% endfor %} 
+        
+{% else %}
+    location {% if prefix.1.regex | default(skynet_balancer_deploy_services_prefixes_default.regex) %}~ /{% else %}/{% endif %}{{ prefix.1.prefix }} {
+        access_log {{ skynet_balancer_deploy_nginx_logs_base_path }}/{{ prefix.0.name }}_{{ prefix.0.tag }}/nginx_access.log service_json_log_format;
+        error_log {{ skynet_balancer_deploy_nginx_logs_base_path }}/{{ prefix.0.name }}_{{ prefix.0.tag }}/nginx_error.log;
+{% if prefix.1.mirror | default(skynet_balancer_deploy_services_prefixes_default.mirror) %}
+
+        mirror /debug_{{ prefix.1.prefix }};
+        mirror_request_body on;
+{% endif %}
+
+        proxy_pass http://{{ prefix.0.name }}_{{ prefix.0.tag }}_{{ prefix.0.port }}_{% if prefix.1.sticky_session | default(skynet_balancer_deploy_services_prefixes_default.sticky_session) %}sticky{% else %}nonsticky{% endif %}{% if prefix.1.from_admin | default(skynet_balancer_deploy_services_prefixes_default.from_admin) %}_from_admin{% endif %};
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        
+        # Fixed TCP related timeouts
+        proxy_connect_timeout 2;
+        proxy_send_timeout 2;
+
+{% if prefix.1.ws | default(False) %}
+        #websocket stuff
+        proxy_http_version 1.1;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Upgrade $http_upgrade;
+{% else %}
+        #keepalive stuff
+        keepalive_requests 2048;
+        proxy_http_version 1.1;
+        proxy_set_header Connection '';
+{% endif %}
+
+        # Service-dependent max body size
+        client_max_body_size {{ prefix.1.max_body_size | default(skynet_balancer_deploy_services_prefixes_default.max_body_size) }};
+
+        # Service-dependent response timeout
+        proxy_read_timeout {{ prefix.1.timeout | default(skynet_balancer_deploy_services_prefixes_default.timeout) }};
+
+{% if prefix.1.allow_duplicate_non_idempotent_requests | default(skynet_balancer_deploy_services_prefixes_default.allow_duplicate_non_idempotent_requests) %}
+        # Specifies in which cases a request should be passed to the next server
+        proxy_next_upstream error timeout{% for code in prefix.1.upstream_failure_http_codes | default(skynet_balancer_deploy_services_prefixes_default.upstream_failure_http_codes) %} http_{{ code }}{% endfor %} non_idempotent;
+{% endif %}
+        
+    }
+
+{% if prefix.1.mirror | default(skynet_balancer_deploy_services_prefixes_default.mirror) %}
+    location /debug_{{ prefix.1.prefix }} {
+        internal;
+        proxy_pass http://{{ prefix.1.mirror_ip | default(skynet_balancer_deploy_services_prefixes_default.mirror_ip) }}:{{ prefix.0.port }}$request_uri;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+{% endif %}
+{% endif %} 
+{% endfor %} 
+}

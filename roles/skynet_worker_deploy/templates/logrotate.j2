@@ -1,0 +1,13 @@
+{{ skynet_worker_deploy_logs_path_base }}/{{ item.name }}_{{ item.docker.tag }}/*.log {
+  hourly
+  rotate 50
+  size 200M
+  missingok
+  notifempty
+  compress
+  sharedscripts
+  delaycompress
+  postrotate
+    docker kill -s USR1 {{ item.name }}_{{ item.docker.tag }}
+  endscript
+}

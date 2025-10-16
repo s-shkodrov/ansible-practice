@@ -1,0 +1,56 @@
+
+##{{ ansible_managed }}
+
+server {
+    listen 0.0.0.0:80;
+    server_name {% if skynet_gateway_balancer_env != "replika_production" %}{{ skynet_gateway_balancer_env | replace("_", "-") }}.{% endif %}skynet-gateway.replika.ai;
+
+    access_log off;
+    error_log {{ skynet_gateway_balancer_nginx_logs_base_path }}/skynet_error.log;
+
+    location / {
+        proxy_pass http://skynet-balancer;
+        
+        client_max_body_size {{ skynet_gateway_balancer_prefixes_default.max_body_size }};
+        
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location = /statement_about_user/v1/actions/store_if_statement_about_user {
+        return 204;
+    }
+
+    {% for service in skynet_gateway_balancer_services | subelements('prefixes') %}
+    # Config for {{ service.0.name }}_{{ service.0.tag }}
+    location /{{ service.1.prefix }} {
+        proxy_pass http://skynet-balancer;
+
+        client_max_body_size {{ service.1.max_body_size | default(skynet_gateway_balancer_prefixes_default.max_body_size) }};
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        
+{% if service.1.ws | default(False) %}
+        #websocket stuff
+        proxy_http_version 1.1;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Upgrade $http_upgrade;
+{% else %}
+        #keepalive stuff
+        keepalive_requests 2048;
+        proxy_http_version 1.1;
+        proxy_set_header Connection '';
+{% endif %}
+
+        # Fixed TCP related timeouts 
+        proxy_connect_timeout {{ service.1.proxy_timeouts | default(skynet_gateway_balancer_prefixes_default.proxy_timeouts) }};
+        proxy_send_timeout {{ service.1.proxy_timeouts | default(skynet_gateway_balancer_prefixes_default.proxy_timeouts) }};
+        # Service-dependent response timeout
+        proxy_read_timeout {{ service.1.proxy_timeouts | default(skynet_gateway_balancer_prefixes_default.proxy_timeouts) }};
+
+        access_log {{ skynet_gateway_balancer_nginx_logs_base_path }}/skynet_access.log skynet_gateway_json_log_format;
+        error_log {{ skynet_gateway_balancer_nginx_logs_base_path }}/skynet_error.log;
+    }
+    {% endfor %}
+}

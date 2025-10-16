@@ -1,0 +1,26 @@
+---
+# Reports Docker resource usage (disk space, CPU, memory) for the target environment
+
+- name: Check Docker system usage
+  hosts: "{{ target_env }}_*"
+  become: true
+  become_user: root
+  gather_facts: false
+  tasks:
+    - name: Display system disk usage
+      shell: df -h /
+      register: disk_usage
+      ignore_errors: true
+
+    - name: Show disk usage
+      debug:
+        msg: "{{ disk_usage.stdout_lines }}"
+
+    - name: Display Docker system df
+      shell: docker system df
+      register: docker_usage
+      ignore_errors: true
+
+    - name: Show Docker resource usage
+      debug:
+        msg: "{{ docker_usage.stdout_lines }}"

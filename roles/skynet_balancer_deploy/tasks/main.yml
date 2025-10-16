@@ -1,0 +1,34 @@
+---
+- name: Ensure servicectl exists
+  copy:
+    src: "{{ skynet_balancer_servicectl }}"
+    dest: "/usr/local/bin/{{ skynet_balancer_servicectl }}"
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Ensure logs directories exist
+  file:
+    path: "{{ skynet_balancer_deploy_nginx_logs_base_path }}/{{ item.name }}_{{ item.tag }}"
+    owner: "{{ skynet_balancer_deploy_replika_user }}"
+    mode: "0755"
+    state: directory
+  loop: "{{ skynet_balancer_deploy_services }}"
+
+- name: Generate upstream config
+  template:
+    src: "200-upstream.conf.j2"
+    dest: "{{ skynet_balancer_deploy_nginx_configs_path }}/200-upstream.conf"
+  notify: "Reload nginx"
+
+- name: Generate JSON log format config
+  template:
+    src: "100-json-log-format.conf.j2"
+    dest: "{{ skynet_balancer_deploy_nginx_configs_path }}/100-json-log-format.conf"
+  notify: "Reload nginx"
+
+- name: Generate services config
+  template:
+    src: "300-services.conf.j2"
+    dest: "{{ skynet_balancer_deploy_nginx_configs_path }}/300-services.conf"
+  notify: "Reload nginx"

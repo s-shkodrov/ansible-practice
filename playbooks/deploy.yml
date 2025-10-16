@@ -1,0 +1,34 @@
+---
+# Deploys all components (balancers, gateways, workers) for the chosen environment
+
+- name: Deploy Balancers
+  hosts: "{{ target_env }}_balancers"
+  become: true
+  become_user: root
+  any_errors_fatal: true
+  serial: 1
+  roles:
+    - docker_helpers
+    - skynet_balancer_deploy
+
+- name: Deploy Gateways (if defined)
+  hosts: "{{ target_env }}_gateways"
+  become: true
+  become_user: root
+  any_errors_fatal: true
+  serial: 1
+  roles:
+    - skynet_gateway_deploy
+  when: groups[target_env + '_gateways'] is defined and groups[target_env + '_gateways'] | length > 0
+
+- name: Deploy Workers
+  hosts: "{{ target_env }}_workers"
+  become: true
+  become_user: root
+  gather_facts: true
+  any_errors_fatal: true
+  vars:
+    skynet_worker_deploy_prefetch_images: "{{ skynet_worker_deploy_prefetch_images | default(true) }}"
+  roles:
+    - docker_helpers
+    - skynet_worker_deploy

@@ -1,0 +1,37 @@
+---
+- name: Ensure logs directory exists
+  file:
+    path: "{{ skynet_worker_deploy_logs_path_base }}/{{ item.name }}_{{ item.docker.tag }}"
+    owner: "{{ skynet_worker_deploy_replika_user }}"
+    mode: "0755"
+    state: directory
+  loop: "{{ skynet_worker_deploy_services }}"
+  when: item.state == 'present'
+
+- name: Generate gunicorn config
+  template:
+    src: config.py.j2
+    dest: "{{ skynet_worker_deploy_configs_path_base }}/{{ item.name }}_{{ item.docker.tag }}/config.py"
+  loop: "{{ skynet_worker_deploy_services }}"
+  when:
+    - item.gunicorn is defined
+    - item.state == 'present'
+
+- name: Deploy container
+  docker_container:
+    name: "{{ item.name }}_{{ item.docker.tag }}"
+    image: "{{ item.docker.image }}:{{ item.docker.tag }}"
+    restart_policy: unless-stopped
+    state: started
+    recreate: true
+    network_mode: "{{ item.docker.network_mode | default('host') }}"
+    volumes: "{{ skynet_worker_deploy_docker_volumes }}"
+    pull: true
+    command:
+      - bash
+      - -c
+      - "{{ item.docker.command | default(skynet_worker_deploy_gunicorn_cmd) }}"
+    env: "{{ skynet_worker_deploy_env_base | combine(item.env | default({})) }}"
+    runtime: "{{ skynet_worker_deploy_docker_runtime }}"
+  loop: "{{ skynet_worker_deploy_services }}"
+  when: item.state == 'present'

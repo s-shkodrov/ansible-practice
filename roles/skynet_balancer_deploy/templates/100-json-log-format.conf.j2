@@ -1,0 +1,32 @@
+
+##{{ ansible_managed }}
+
+map $request_uri $replika_service {
+    default "undefined";
+{% for prefix in skynet_balancer_deploy_services | subelements('prefixes') %} 
+    "~{% if prefix.1.regex | default(skynet_balancer_deploy_services_prefixes_default.regex) %}{% else %}/{% endif %}{{ prefix.1.prefix }}.*$" "{{ prefix.0.name }}_{{ prefix.0.tag }}";{% endfor %}
+
+}
+
+map $request_uri $replika_group {
+    default "undefined";
+{% for prefix in skynet_balancer_deploy_services | subelements('prefixes') %} 
+    "~{% if prefix.1.regex | default(skynet_balancer_deploy_services_prefixes_default.regex) %}{% else %}/{% endif %}{{ prefix.1.prefix }}.*$" "{{ prefix.0.group }}";{% endfor %}
+
+}
+
+log_format service_json_log_format
+  '{'
+    '"time_local": "$time_local",'
+    '"remote_addr": "$remote_addr",'
+    '"request": "$request",'
+    '"status": "$status",'
+    '"body_bytes_sent": "$body_bytes_sent",'
+    '"request_time": "$request_time",'
+    '"upstream_addr": "$upstream_addr",'
+    '"upstream_status": "$upstream_status",'
+    '"upstream_response_time": "$upstream_response_time",'
+    '"service_name": "$replika_service",'
+    '"group": "$replika_group",'
+    '"env": "{{ skynet_balancer_deploy_env }}"'
+  '}';

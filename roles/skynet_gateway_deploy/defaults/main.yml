@@ -1,0 +1,16 @@
+---
+skynet_gateway_balancer_replika_user: "luka"
+skynet_gateway_balancer_env: "production"
+skynet_gateway_balancer_nginx_logs_base_path: "/var/log/nginx"
+skynet_gateway_balancer_nginx_configs_path: "/etc/nginx/conf.d"
+
+skynet_gateway_balancer_workers_default:
+  fail_timeout: 60
+  weight: 10
+  max_fails: 10
+
+skynet_gateway_balancer_prefixes_default:
+  proxy_timeouts: 5
+  max_body_size: "50m"
+
+skynet_gateway_balancer_services: {}

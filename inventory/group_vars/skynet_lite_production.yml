@@ -1,0 +1,23 @@
+aws_region: eu-central-1
+aws_zone_id: "{{ lookup('env', 'AWS_HOSTED_ZONE_ID') }}"
+skynet_worker_deploy_prefetch_images: false
+skynet_worker_deploy_balancer_on_localhost: true
+
+skynet_worker_deploy_services:
+  - name: character_nn
+    docker:
+      image: 656397365169.dkr.ecr.eu-central-1.amazonaws.com/luka/character_nn
+      tag: release
+    port: 8011
+    state: present
+    env:
+      ENVIRONMENT: production
+      DD_ENV: lite-production
+
+skynet_balancer_deploy_services:
+  - name: character_nn
+    tag: release
+    port: 8011
+    prefixes:
+      - prefix: character
+        sticky_session: true

@@ -1,0 +1,5 @@
+from luka_utils.gunicorn.config import *
+
+{% for key, value in item.gunicorn.items() %}
+{{ key }} = '{{ value }}'
+{% endfor %}

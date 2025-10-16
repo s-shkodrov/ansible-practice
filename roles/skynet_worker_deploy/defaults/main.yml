@@ -1,0 +1,19 @@
+---
+skynet_worker_deploy_replika_user: "luka"
+skynet_worker_deploy_configs_path_base: "/opt/luka/configs"
+skynet_worker_deploy_logs_path_base: "/opt/luka/logs"
+skynet_worker_deploy_docker_runtime: "nvidia"
+skynet_worker_deploy_prefetch_images: false
+skynet_worker_deploy_global_manage_balancer: true
+skynet_worker_deploy_balancers_group: ""
+skynet_worker_deploy_servicectl_path: "/usr/local/bin/skynet_servicectl.sh"
+skynet_worker_deploy_balancer_on_localhost: false
+
+skynet_worker_deploy_env_base: {}
+skynet_worker_deploy_services: {}
+
+skynet_worker_deploy_docker_volumes:
+  - "{{ skynet_worker_deploy_configs_path_base }}/{{ item.name }}_{{ item.docker.tag }}:{{ skynet_worker_deploy_configs_path_base }}/{{ item.name }}_{{ item.docker.tag }}:ro"
+  - "{{ skynet_worker_deploy_logs_path_base }}/{{ item.name }}_{{ item.docker.tag }}:{{ skynet_worker_deploy_logs_path_base }}/{{ item.name }}_{{ item.docker.tag }}"
+
+aws_region: "{{ lookup('env', 'AWS_REGION') | default('eu-central-1', true) }}"

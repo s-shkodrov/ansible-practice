@@ -1,0 +1,8 @@
+
+##{{ ansible_managed }}
+
+upstream skynet-balancer {
+    {% for worker in skynet_gateway_balancer_workers_default %} 
+    server {{ worker.ip }} fail_timeout={{ worker.fail_timeout | default('') }} max_fails={{ worker.max_fails | default('') }} weight={{ worker.weight | default('') }};
+    {% endfor %}
+}

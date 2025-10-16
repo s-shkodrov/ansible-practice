@@ -1,0 +1,29 @@
+---
+skynet_balancer_deploy_replika_user: "luka"
+skynet_balancer_deploy_env: "production"
+skynet_balancer_deploy_nginx_logs_base_path: "/opt/luka/logs"
+skynet_balancer_deploy_nginx_configs_path: "/etc/nginx/conf.d"
+skynet_balancer_deploy_admin_fail_timeout: 60
+
+skynet_balancer_deploy_workers_default:
+  fail_timeout: 60
+  weight: 10
+  max_fails: 1000
+
+skynet_balancer_deploy_workers: {}
+
+skynet_balancer_deploy_services_prefixes_default:
+  broadcast: false
+  max_body_size: "20m"
+  mirror: false
+  mirror_ip: ""
+  timeout: 2
+  sticky_session: false
+  regex: false
+  upstream_failure_http_codes: [500, 502]
+  allow_duplicate_non_idempotent_requests: true
+  from_admin: false
+
+skynet_balancer_deploy_services: {}
+
+skynet_balancer_servicectl: "skynet_servicectl.sh"

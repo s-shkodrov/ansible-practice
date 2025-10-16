@@ -1,0 +1,43 @@
+
+##{{ ansible_managed }}
+
+{% for service in skynet_balancer_deploy_services -%} 
+upstream {{ service.name }}_{{ service.tag }}_{{ service.port }}_sticky {
+  hash $http_context_hash consistent;
+  keepalive 1024;
+  {% for worker in skynet_balancer_deploy_workers -%} 
+  server {{ worker.ip }}:{{ service.port }} fail_timeout={{ worker.fail_timeout | default(skynet_balancer_deploy_workers_default.fail_timeout) }} max_fails={{ worker.max_fails | default(skynet_balancer_deploy_workers_default.max_fails) }} weight={{ worker.weight | default(skynet_balancer_deploy_workers_default.weight) }};
+  {% endfor %}
+}
+
+upstream {{ service.name }}_{{ service.tag }}_{{ service.port }}_nonsticky {
+  keepalive 1024;
+  {% for worker in skynet_balancer_deploy_workers -%} 
+    server {{ worker.ip }}:{{ service.port }} fail_timeout={{ worker.fail_timeout | default(skynet_balancer_deploy_workers_default.fail_timeout) }} max_fails={{ worker.max_fails | default(skynet_balancer_deploy_workers_default.max_fails) }} weight={{ worker.weight | default(skynet_balancer_deploy_workers_default.weight) }};
+  {% endfor %}
+}
+
+{% for prefix in service.prefixes -%}
+{% if prefix.from_admin | default( skynet_balancer_deploy_services_prefixes_default.from_admin) -%}
+upstream {{ service.name }}_{{ service.tag }}_{{ service.port }}_sticky_from_admin {
+  keepalive 1024;
+  {% for worker in skynet_balancer_deploy_workers[:-1] -%} 
+  server {{ worker.ip }}:{{ service.port }} fail_timeout={{ skynet_balancer_deploy_admin_fail_timeout }} max_fails={{ worker.max_fails | default(skynet_balancer_deploy_workers_default.max_fails) }} weight={{ worker.weight | default(skynet_balancer_deploy_workers_default.weight) }} backup;
+  {% endfor -%}
+  {% for worker in skynet_balancer_deploy_workers[-1:] -%} 
+  server {{ worker.ip }}:{{ service.port }} fail_timeout={{ skynet_balancer_deploy_admin_fail_timeout }} max_fails={{ worker.max_fails | default(skynet_balancer_deploy_workers_default.max_fails) }} weight={{ worker.weight | default(skynet_balancer_deploy_workers_default.weight) }};
+  {% endfor %}
+}
+
+upstream {{ service.name }}_{{ service.tag }}_{{ service.port }}_nonsticky_from_admin {
+  keepalive 1024;
+  {% for worker in skynet_balancer_deploy_workers[:-1] -%} 
+    server {{ worker.ip }}:{{ service.port }} fail_timeout={{ skynet_balancer_deploy_admin_fail_timeout }} max_fails={{ worker.max_fails | default(skynet_balancer_deploy_workers_default.max_fails) }} weight={{ worker.weight | default(skynet_balancer_deploy_workers_default.weight) }} backup;
+  {% endfor -%}
+  {% for worker in skynet_balancer_deploy_workers[-1:] -%} 
+  server {{ worker.ip }}:{{ service.port }} fail_timeout={{ skynet_balancer_deploy_admin_fail_timeout }} max_fails={{ worker.max_fails | default(skynet_balancer_deploy_workers_default.max_fails) }} weight={{ worker.weight | default(skynet_balancer_deploy_workers_default.weight) }};
+  {% endfor %}
+}
+{% endif %}
+{% endfor %}
+{% endfor %}

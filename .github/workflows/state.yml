@@ -1,0 +1,23 @@
+name: State
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: "Target environment"
+        required: true
+
+jobs:
+  state:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ansible
+
+      - name: Run State Playbook
+        run: |
+          ansible-playbook playbooks/state.yml -e "target_env=${{ github.event.inputs.env }}"

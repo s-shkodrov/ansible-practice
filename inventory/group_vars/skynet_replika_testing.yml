@@ -1,0 +1,20 @@
+aws_region: eu-central-1
+aws_zone_id: "{{ lookup('env', 'AWS_HOSTED_ZONE_ID') }}"
+skynet_worker_deploy_prefetch_images: false
+
+skynet_worker_deploy_services:
+  - name: beta_service
+    docker:
+      image: 656397365169.dkr.ecr.eu-central-1.amazonaws.com/luka/beta_service
+      tag: develop
+    port: 8050
+    state: present
+    env:
+      ENVIRONMENT: testing
+
+skynet_balancer_deploy_services:
+  - name: beta_service
+    tag: develop
+    port: 8050
+    prefixes:
+      - prefix: beta

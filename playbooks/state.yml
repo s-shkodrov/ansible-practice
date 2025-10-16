@@ -1,0 +1,17 @@
+---
+# Lists all container states on target hosts (running/stopped/exited)
+
+- name: Check container state
+  hosts: "{{ target_env }}_*"
+  become: true
+  become_user: root
+  gather_facts: false
+  tasks:
+    - name: Show running containers
+      shell: docker ps --format "table {{ '{{.Names}}\t{{.Status}}\t{{.Image}}' }}"
+      register: container_state
+      ignore_errors: true
+
+    - name: Display container state
+      debug:
+        msg: "{{ container_state.stdout_lines | default(['No containers found']) }}"

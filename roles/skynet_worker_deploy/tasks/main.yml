@@ -1,0 +1,6 @@
+---
+- include_tasks: prefetch_images.yml
+  when: skynet_worker_deploy_prefetch_images | bool
+
+- include_tasks: deploy.yml
+  when: not skynet_worker_deploy_prefetch_images | bool

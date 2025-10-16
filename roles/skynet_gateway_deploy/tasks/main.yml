@@ -1,0 +1,25 @@
+---
+- name: Ensure logs directory exists
+  file:
+    path: "{{ skynet_gateway_balancer_nginx_logs_base_path }}"
+    owner: "{{ skynet_gateway_balancer_replika_user }}"
+    mode: "0755"
+    state: directory
+
+- name: Generate HTTP map config
+  template:
+    src: "100-skynet_gateway_http.conf.j2"
+    dest: "{{ skynet_gateway_balancer_nginx_configs_path }}/100-skynet_gateway_http.conf"
+  notify: "Reload nginx"
+
+- name: Generate upstream config
+  template:
+    src: "200-skynet-gateway-upstream.conf.j2"
+    dest: "{{ skynet_gateway_balancer_nginx_configs_path }}/200-skynet-gateway-upstream.conf"
+  notify: "Reload nginx"
+
+- name: Generate main gateway server config
+  template:
+    src: "300-skynet-gateway.conf.j2"
+    dest: "{{ skynet_gateway_balancer_nginx_configs_path }}/300-skynet-gateway.conf"
+  notify: "Reload nginx"

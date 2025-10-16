@@ -1,0 +1,34 @@
+
+
+##{{ ansible_managed }}
+#jinja2:lstrip_blocks: True
+
+map $request_uri $skynet_gateway_service {
+    default "undefined";
+    {% for service in skynet_gateway_balancer_services | subelements('prefixes') %}
+    "~{{ service.1.prefix }}.*$" "{{ service.0.name }}_{{ service.0.tag }}";
+    {% endfor %}
+}
+
+map $request_uri $skynet_gateway_group {
+    default "undefined";
+    {% for service in skynet_gateway_balancer_services | subelements('prefixes') %}
+    "~{{ service.1.prefix }}.*$" "{{ service.0.group }}";
+    {% endfor %}
+}
+
+log_format skynet_gateway_json_log_format
+  '{'
+    '"time_local": "$time_local",'
+    '"remote_addr": "$remote_addr",'
+    '"request": "$request",'
+    '"status": "$status",'
+    '"body_bytes_sent": "$body_bytes_sent",'
+    '"request_time": "$request_time",'
+    '"upstream_addr": "$upstream_addr",'
+    '"upstream_status": "$upstream_status",'
+    '"upstream_response_time": "$upstream_response_time",'
+    '"service_name": "$skynet_gateway_service",'
+    '"group": "$skynet_gateway_group",'
+    '"env": "{{ skynet_gateway_balancer_env }}"'
+  '}';

@@ -1,0 +1,24 @@
+---
+# Cleans up unused Docker images, containers, and volumes on all hosts in the target environment
+
+- name: Cleanup Docker system
+  hosts: "{{ target_env }}_*"
+  become: true
+  become_user: root
+  gather_facts: false
+  tasks:
+    - name: Remove dangling Docker images
+      shell: docker image prune -f
+      ignore_errors: true
+
+    - name: Remove stopped containers
+      shell: docker container prune -f
+      ignore_errors: true
+
+    - name: Remove unused volumes
+      shell: docker volume prune -f
+      ignore_errors: true
+
+    - name: Remove unused networks
+      shell: docker network prune -f
+      ignore_errors: true

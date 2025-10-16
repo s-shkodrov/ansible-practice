@@ -1,0 +1,43 @@
+---
+# Stops and removes all services, configs, and logs for the target environment
+
+- name: Destroy Worker Containers
+  hosts: "{{ target_env }}_workers"
+  become: true
+  become_user: root
+  gather_facts: false
+  tasks:
+    - name: Stop and remove all containers
+      shell: |
+        docker ps -a --format '{{ '{{.Names}}' }}' | xargs -r docker rm -f
+      ignore_errors: true
+
+    - name: Remove log directories
+      file:
+        path: "{{ skynet_worker_deploy_logs_path_base | default('/opt/luka/logs') }}"
+        state: absent
+      ignore_errors: true
+
+    - name: Remove config directories
+      file:
+        path: "{{ skynet_worker_deploy_configs_path_base | default('/opt/luka/configs') }}"
+        state: absent
+      ignore_errors: true
+
+- name: Destroy Balancer Nginx Configs
+  hosts: "{{ target_env }}_balancers"
+  become: true
+  become_user: root
+  gather_facts: false
+  tasks:
+    - name: Remove Nginx config files
+      file:
+        path: "/etc/nginx/conf.d"
+        state: absent
+      ignore_errors: true
+
+    - name: Restart Nginx cleanly
+      systemd:
+        name: nginx
+        state: restarted
+      ignore_errors: true
