@@ -4,21 +4,20 @@ on:
   workflow_dispatch:
     inputs:
       env:
-        description: "Environment (e.g. production, testing)"
+        description: "Target environment"
         required: true
 
 jobs:
   cleanup:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Ansible
+      - name: Install Ansible
         run: |
           sudo apt-get update -y
           sudo apt-get install -y ansible
 
-      - name: Run Cleanup
+      - name: Run Cleanup Playbook
         run: |
-          ansible-playbook playbooks/cleanup.yml \
-            -e "target_env=${{ github.event.inputs.env }}"
+          ansible-playbook playbooks/cleanup.yml -e "target_env=${{ github.event.inputs.env }}"
