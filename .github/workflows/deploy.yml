@@ -4,27 +4,33 @@ on:
   workflow_dispatch:
     inputs:
       env:
-        description: "Target environment (e.g. skynet_replika_lm_small_production)"
+        description: "Target environment"
         required: true
+      service:
+        description: "Service name"
+        required: true
+      tag:
+        description: "Docker tag"
+        required: true
+      port:
+        description: "Port number"
+        default: "6095"
 
 jobs:
   deploy:
     runs-on: self-hosted
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_DEFAULT_REGION: eu-central-1
-      AWS_HOSTED_ZONE_ID: ${{ vars.AWS_HOSTED_ZONE_ID }}
-      REMOTE_USER: ${{ secrets.REMOTE_USER }}
-      REMOTE_SSH_PORT: ${{ secrets.REMOTE_SSH_PORT }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Ansible + AWS dependencies
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y ansible python3-boto3 python3-botocore
+      - name: Set up Ansible
+        run: sudo apt-get update && sudo apt-get install -y ansible
 
-      - name: Run Deployment Playbook
+      - name: Run Deployment
+        env:
+          TARGET_ENV: ${{ github.event.inputs.env }}
+          SERVICE_NAME: ${{ github.event.inputs.service }}
+          DOCKER_TAG: ${{ github.event.inputs.tag }}
+          PORT: ${{ github.event.inputs.port }}
         run: |
-          ansible-playbook playbooks/deploy.yml -e "target_env=${{ github.event.inputs.env }}"
+          ansible-playbook -i inventory/hosts playbooks/deploy.yml \
+            -e "target_env=${TARGET_ENV} service=${SERVICE_NAME} tag=${DOCKER_TAG} port=${PORT}"
