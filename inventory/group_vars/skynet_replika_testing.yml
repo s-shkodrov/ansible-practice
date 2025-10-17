@@ -6,7 +6,7 @@ skynet_worker_deploy_services:
   - name: beta_service
     docker:
       image: 656397365169.dkr.ecr.eu-central-1.amazonaws.com/luka/beta_service
-      tag: develop
+      tag: "{{ tag | default('latest') }}"
     port: 8050
     state: present
     env:
@@ -14,7 +14,7 @@ skynet_worker_deploy_services:
 
 skynet_balancer_deploy_services:
   - name: beta_service
-    tag: develop
+    tag: "{{ tag | default('latest') }}"
     port: 8050
     prefixes:
       - prefix: beta

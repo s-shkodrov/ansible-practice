@@ -1,8 +1,9 @@
 ---
 # Deploys all components (balancers, gateways, workers) for the chosen environment
+# Safe for syntax check and local dry runs
 
 - name: Deploy Balancers
-  hosts: "{{ target_env }}_balancers"
+  hosts: "{{ (target_env | default('skynet_lite_production')) + '_balancers' }}"
   become: true
   become_user: root
   any_errors_fatal: true
@@ -12,17 +13,20 @@
     - skynet_balancer_deploy
 
 - name: Deploy Gateways (if defined)
-  hosts: "{{ target_env }}_gateways"
+  hosts: "{{ (target_env | default('skynet_lite_production')) + '_gateways' }}"
   become: true
   become_user: root
   any_errors_fatal: true
   serial: 1
-  roles:
-    - skynet_gateway_deploy
-  when: groups[target_env + '_gateways'] is defined and groups[target_env + '_gateways'] | length > 0
+  tasks:
+    - name: "Include skynet_gateway_deploy role if gateways are defined"
+      include_role:
+        name: skynet_gateway_deploy
+      when: groups[(target_env | default('skynet_lite_production')) + '_gateways'] is defined and
+            (groups[(target_env | default('skynet_lite_production')) + '_gateways'] | length > 0)
 
 - name: Deploy Workers
-  hosts: "{{ target_env }}_workers"
+  hosts: "{{ (target_env | default('skynet_lite_production')) + '_workers' }}"
   become: true
   become_user: root
   gather_facts: true

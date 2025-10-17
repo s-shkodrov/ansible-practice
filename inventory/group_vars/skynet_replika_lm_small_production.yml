@@ -6,7 +6,7 @@ skynet_worker_deploy_services:
   - name: blahblah_dialog
     docker:
       image: 656397365169.dkr.ecr.eu-central-1.amazonaws.com/luka/blahblah_dialog
-      tag: release
+      tag: "{{ tag | default('latest') }}"
     port: 8090
     state: present
     env:
@@ -15,7 +15,7 @@ skynet_worker_deploy_services:
 
 skynet_balancer_deploy_services:
   - name: blahblah_dialog
-    tag: release
+    tag: "{{ tag | default('latest') }}"
     port: 8090
     prefixes:
       - prefix: dialog

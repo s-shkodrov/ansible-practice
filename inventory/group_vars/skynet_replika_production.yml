@@ -6,7 +6,7 @@ skynet_worker_deploy_services:
   - name: core_service
     docker:
       image: 656397365169.dkr.ecr.eu-central-1.amazonaws.com/luka/core_service
-      tag: release
+      tag: "{{ tag | default('latest') }}"
     port: 8070
     state: present
     env:
@@ -14,7 +14,7 @@ skynet_worker_deploy_services:
 
 skynet_balancer_deploy_services:
   - name: core_service
-    tag: release
+    tag: "{{ tag | default('latest') }}"
     port: 8070
     prefixes:
       - prefix: core

@@ -2,7 +2,7 @@
 - name: Prefetch Docker images
   docker_image:
     name: "{{ item.docker.image }}"
-    tag: "{{ item.docker.tag }}"
+    tag: "{{ tag | default(item.docker.tag) }}"
     source: pull
     force_source: true
   loop: "{{ skynet_worker_deploy_services }}"
